@@ -31,7 +31,7 @@ Compressed is set to true if not provided.
 Testnet is set to false by default.
 """
 function wif(pk::PrivateKey, compressed::Bool=true, testnet::Bool=false)
-    secret_bytes = int2bytes(pk.𝑒)
+    secret_bytes = bytes(pk.𝑒)
     if testnet
         prefix = 0xef
     else
