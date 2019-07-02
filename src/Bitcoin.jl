@@ -1,6 +1,6 @@
 module Bitcoin
 
-using BitConverter, ECC, MerkleTrees
+using BitConverter, secp256k1, ECC, MerkleTrees
 using SHA, Ripemd, Base58
 using Dates: unix2datetime, datetime2unix, now
 using Sockets
