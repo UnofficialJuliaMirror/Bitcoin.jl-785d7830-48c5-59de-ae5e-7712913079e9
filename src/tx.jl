@@ -1,5 +1,4 @@
 import Base: hash, parse
-import ECC.verify
 
 abstract type TxComponent end
 
@@ -22,14 +21,14 @@ end
 Takes a byte stream and parses the tx_input at the start
 return a TxIn object
 """
-function txinparse(s::IOBuffer)
+function TxIn(s::IOBuffer)
     prev_tx = read(s, 32)
     reverse!(prev_tx)
     bytes = read(s, 4)
-    prev_index = Int(bytes, little_endian=true)
+    prev_index = to_int(bytes, little_endian=true)
     script_sig = scriptparse(s)
     readbytes!(s, bytes, 4)
-    sequence = Int(bytes, little_endian=true)
+    sequence = to_int(bytes, little_endian=true)
     return TxIn(prev_tx, prev_index, script_sig, sequence)
 end
 
@@ -93,7 +92,7 @@ return a TxOut object
 function txoutparse(s::Base.GenericIOBuffer)
     bytes = UInt8[]
     readbytes!(s, bytes, 8)
-    amount = Int(bytes, little_endian=true)
+    amount = to_int(bytes, little_endian=true)
     script_pubkey = scriptparse(s)
     return TxOut(amount, script_pubkey)
 end
@@ -138,7 +137,7 @@ function parse_legacy(s::Base.GenericIOBuffer, testnet::Bool=false)
     num_inputs = read_varint(s)
     inputs = []
     for i in 1:num_inputs
-        input = txinparse(s)
+        input = TxIn(s)
         push!(inputs, input)
     end
     num_outputs = read_varint(s)
@@ -157,7 +156,7 @@ function parse_segwit(s::Base.GenericIOBuffer, testnet::Bool=false)
     num_inputs = read_varint(s)
     inputs = []
     for _ ∈ 1:num_inputs
-        push!(inputs, txinparse(s))
+        push!(inputs, TxIn(s))
     end
     num_outputs = read_varint(s)
     outputs = []
@@ -419,7 +418,7 @@ function verify(tx::Tx, input_index)
     end
     combined_script = Script(copy(tx_in.script_sig.instructions))
     append!(combined_script.instructions, script_pubkey(tx_in, tx.testnet).instructions)
-    return evaluate(combined_script, Int(z), witness)
+    return evaluate(combined_script, to_int(z), witness)
 end
 
 
@@ -443,19 +442,19 @@ end
 """
 Signs the input using the private key
 """
-function txsigninput(tx::Tx, input_index::Integer, private_key::PrivateKey)
-    z = Int(sig_hash(tx, input_index))
-    sig = pksign(private_key, z)
-    txpushsignature(tx, input_index, z, sig, private_key.𝑃)
+function txsigninput(tx::Tx, input_index::Integer, keypair::KeyPair)
+    z = to_int(sig_hash(tx, input_index))
+    sig = ECDSA.sign(keypair, z)
+    txpushsignature(tx, input_index, z, sig, keypair.𝑄)
 end
 
 """
 Append Signature to the Script Pubkey of TxIn at index
 """
-function txpushsignature(tx::Tx, input_index::Integer, z::Integer, sig::Signature, pubkey::S256Point)
-    der = sig2der(sig)
+function txpushsignature(tx::Tx, input_index::Integer, z::Integer, sig::ECDSA.Signature, pubkey::Secp256k1.Point)
+    der = serialize(sig)
     append!(der, bytes(SIGHASH_ALL))
-    sec = point2sec(pubkey)
+    sec = serialize(pubkey)
     script_sig = Script([der, sec])
     tx.tx_ins[input_index + 1].script_sig = script_sig
     return verify(tx, input_index)
@@ -484,7 +483,7 @@ function coinbase_height(tx::Tx)
         return nothing
     end
     height_bytes = tx.tx_ins[1].script_sig.instructions[1]
-    return Int(height_bytes, little_endian=true)
+    return to_int(height_bytes, little_endian=true)
 end
 
 @deprecate txparse(s::IOBuffer, testnet::Bool) parse(s::IOBuffer, testnet::Bool)::Tx
@@ -500,3 +499,4 @@ end
 @deprecate txin_scriptpubkey(txin::TxIn, testnet::Bool) script_pubkey(txin::TxIn, testnet::Bool)
 @deprecate txinserialize(tx::TxIn) serialize(tx::TxIn)
 @deprecate txin_fetchtx(tx::TxIn, testnet::Bool) fetch(tx::TxIn, testnet::Bool)
+@deprecate txinparse(s::IOBuffer) TxIn(s::IOBuffer)

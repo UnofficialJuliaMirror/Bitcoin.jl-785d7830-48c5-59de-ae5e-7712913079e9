@@ -1,6 +1,7 @@
 module Bitcoin
 
-using BitConverter, Secp256k1, ECC, MerkleTrees
+using BitConverter, Secp256k1, MerkleTrees
+import Secp256k1: serialize
 using SHA, Ripemd, Base58
 using Dates: unix2datetime, datetime2unix, now
 using Sockets

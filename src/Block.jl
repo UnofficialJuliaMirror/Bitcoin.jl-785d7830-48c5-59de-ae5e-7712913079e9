@@ -127,7 +127,7 @@ Returns whether this block satisfies proof of work
 """
 function check_pow(block::BlockHeader)
     block_hash = hash(block)
-    proof = Int(block_hash, little_endian=true)
+    proof = to_int(block_hash, little_endian=true)
     return proof < target(block)
 end
 
