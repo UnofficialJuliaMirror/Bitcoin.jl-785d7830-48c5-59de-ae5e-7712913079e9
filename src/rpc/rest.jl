@@ -23,14 +23,14 @@ function get_tx(key::String; url::String="", testnet::Bool=false)
         error("Unexpected status: ", response.status)
     end
     raw = response.body
-    tx = parse(IOBuffer(raw), testnet)::Tx
-    if tx.segwit
-        computed = id(tx)
+    tx = BitcoinPrimitives.Tx(IOBuffer(raw))
+    if tx.marker == 0xff
+        computed = bytes2hex(BitcoinPrimitives.hash256(tx))
     else
         computed = bytes2hex(reverse(hash256(raw)))
     end
-    if id(tx) != key
-        error("not the same id : ", id(tx),
+    if bytes2hex(BitcoinPrimitives.hash256(tx)) != key
+        error("not the same id : ", bytes2hex(BitcoinPrimitives.hash256(tx)),
             "\n             vs : ", tx_id)
     end
     return tx
@@ -38,7 +38,7 @@ end
 
 """
     get_headers(key::String; amount::Integer=1, url::String="", testnet::Bool=false)
-    -> BlockHeaders[]
+    -> Headers[]
 
 Returns the bitcoin transaction given a node url with REST server enabled and
 transaction hash as an hexadecimal string.
@@ -52,9 +52,9 @@ function get_headers(key::String; amount::Integer=1, url::String="", testnet::Bo
         error("Unexpected status: ", response.status)
     end
     io = IOBuffer(response.body)
-    headers = BlockHeader[]
+    headers = BitcoinPrimitives.Header[]
     while io.ptr < io.size
-        push!(headers, io2blockheader(io))
+        push!(headers, BitcoinPrimitives.Header(io))
     end
     return headers
 end

@@ -4,6 +4,7 @@ using BitConverter, Secp256k1, MerkleTrees
 import Secp256k1: serialize
 using SHA, Ripemd, Base58
 using Dates: unix2datetime, datetime2unix, now
+using BitcoinPrimitives
 using Sockets
 import Base.show
 export CompactSizeUInt
@@ -23,9 +24,9 @@ include("constants.jl")
 include("address.jl")
 include("op.jl")
 include("script.jl")
-include("tx.jl")
+# include("tx.jl")
 include("rpc/rest.jl")
-include("Block.jl")
+# include("Block.jl")
 include("BloomFilter.jl")
 include("network.jl")
 include("Node.jl")
