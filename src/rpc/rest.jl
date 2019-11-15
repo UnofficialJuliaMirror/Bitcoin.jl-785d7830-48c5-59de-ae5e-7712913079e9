@@ -1,21 +1,21 @@
 using HTTP
 
-function get_url(testnet::Bool=false)
-    string("http://", NODE_URL, ":", DEFAULT["rpcport"][testnet])
+function get_url()
+    testnet = (get_chain() == :TESTNET ? true : false)
+    return string("http://", NODE_URL, ":", DEFAULT["rpcport"][testnet])
 end
 
-init_url(url::String, testnet::Bool) = isempty(url) ? get_url(testnet) : url
+init_url(url::String) = isempty(url) ? get_url() : url
 
 """
-    get_tx(key::String; url::String="", testnet::Bool=false)
+    get_tx(key::String; url::String="")
     -> Tx
 
 Returns the bitcoin transaction given a node url with REST server enabled and
 transaction hash as an hexadecimal string.
-Uses mainnet by default
 """
-function get_tx(key::String; url::String="", testnet::Bool=false)
-    url *= init_url(url, testnet) *"/rest/tx/" * key * ".bin"
+function get_tx(key::String; url::String="")
+    url *= init_url(url) *"/rest/tx/" * key * ".bin"
     response = HTTP.request("GET", url)
     try
         response.status == 200
@@ -29,9 +29,9 @@ function get_tx(key::String; url::String="", testnet::Bool=false)
     else
         computed = bytes2hex(reverse(hash256(raw)))
     end
-    if bytes2hex(BitcoinPrimitives.hash256(tx)) != key
-        error("not the same id : ", bytes2hex(BitcoinPrimitives.hash256(tx)),
-            "\n             vs : ", tx_id)
+    if id(tx) != key
+        error("not the same id : ", id(tx),
+            "\n             vs : ", key)
     end
     return tx
 end
