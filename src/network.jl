@@ -1,17 +1,3 @@
-# TODO Move this function to an appropriate location
-"""
-    script_pubkey(txin::TxIn, testnet::Bool=false)
-    -> Script
-
-Get the scriptPubKey by looking up the tx hash
-Returns a Script object
-"""
-function script_pubkey(txin::BitcoinPrimitives.TxIn, testnet::Bool=false)
-    tx = get_tx(bytes2hex(txin.prevout.txid), testnet=testnet)
-    return tx.outputs[txin.prevout.index + 1].scriptpubkey
-end
-
-
 abstract type AbstractMessage end
 
 struct NetworkEnvelope
